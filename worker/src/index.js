@@ -70,9 +70,6 @@ export default {
       // Prepare the request payload for Gemini
       const geminiPayload = {
         contents: buildContents(messages, image),
-        systemInstruction: {
-          parts: [{ text: SYSTEM_INSTRUCTION }]
-        },
         generationConfig: {
           temperature: 0.7,
           topK: 40,
@@ -150,10 +147,11 @@ export default {
  */
 function buildContents(messages, image) {
   const contents = [];
+  let isFirstUserMessage = true;
 
   for (const message of messages) {
     if (message.role === 'system') {
-      // System instructions are handled separately in Gemini
+      // System instructions will be prepended to first user message
       continue;
     }
 
@@ -161,7 +159,13 @@ function buildContents(messages, image) {
 
     // Add text part
     if (message.content) {
-      parts.push({ text: message.content });
+      // Prepend system instruction to the first user message
+      if (message.role === 'user' && isFirstUserMessage) {
+        parts.push({ text: `${SYSTEM_INSTRUCTION}\n\nUser: ${message.content}` });
+        isFirstUserMessage = false;
+      } else {
+        parts.push({ text: message.content });
+      }
     }
 
     // Add image part if present (multimodal support)
@@ -358,13 +362,10 @@ async function handleAudioTurn(request, env, ctx) {
             }
           },
           {
-            text: "Please transcribe this audio and provide a friendly response."
+            text: `${SYSTEM_INSTRUCTION}\n\nPlease transcribe this audio and provide a friendly response.`
           }
         ]
       }],
-      systemInstruction: {
-        parts: [{ text: SYSTEM_INSTRUCTION }]
-      },
       generationConfig: {
         temperature: 0.7,
         maxOutputTokens: 150,
@@ -543,12 +544,9 @@ async function handleTextMessage(request, env, ctx) {
     const payload = {
       contents: [{
         parts: [{
-          text: text
+          text: `${SYSTEM_INSTRUCTION}\n\nUser: ${text}`
         }]
       }],
-      systemInstruction: {
-        parts: [{ text: SYSTEM_INSTRUCTION }]
-      },
       generationConfig: {
         temperature: 0.7,
         maxOutputTokens: 150,
