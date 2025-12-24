@@ -26,18 +26,35 @@ A Python-based desktop companion app inspired by the LOOI robot. Deskbot runs on
    cd Deskbot
    ```
 
-2. **Create a virtual environment** (recommended):
+2. **Install system dependencies** (required for PyAudio):
+   
+   **On Ubuntu/Debian:**
+   ```bash
+   sudo apt-get update
+   sudo apt-get install portaudio19-dev
+   ```
+   
+   **On macOS:**
+   ```bash
+   brew install portaudio
+   ```
+   
+   **On Windows:**
+   - Download and install PyAudio from [here](https://www.lfd.uci.edu/~gohlke/pythonlibs/#pyaudio), or
+   - PyAudio should work with pip on most systems
+
+3. **Create a virtual environment** (recommended):
    ```bash
    python -m venv venv
    source venv/bin/activate  # On Windows: venv\Scripts\activate
    ```
 
-3. **Install dependencies**:
+4. **Install dependencies**:
    ```bash
    pip install -r requirements.txt
    ```
 
-4. **Set up environment variables**:
+5. **Set up environment variables**:
    ```bash
    cp .env.example .env
    ```
@@ -125,6 +142,13 @@ Tracks user's face position:
 - Smooth tracking with fallback to center
 
 ## Troubleshooting
+
+### PyAudio Installation Issues
+If you encounter errors installing PyAudio:
+- **Linux**: Make sure `portaudio19-dev` is installed: `sudo apt-get install portaudio19-dev`
+- **macOS**: Install PortAudio with Homebrew: `brew install portaudio`
+- **Windows**: Try installing from a pre-built wheel or use `pip install pipwin && pipwin install pyaudio`
+- **Build environments** (Netlify, etc.): Ensure `apt-packages.txt` includes `portaudio19-dev`
 
 ### Microphone Issues
 If voice recognition isn't working:
