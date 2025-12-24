@@ -1,0 +1,22 @@
+{
+  "name": "deskbot",
+  "version": "1.0.0",
+  "description": "Deskbot PWA with Cloudflare Workers",
+  "main": "src/index.ts",
+  "scripts": {
+    "build": "node scripts/build.js",
+    "dev": "wrangler dev",
+    "deploy": "npm run build && wrangler versions upload"
+  },
+  "keywords": [
+    "cloudflare",
+    "worker",
+    "pwa",
+    "voice-assistant"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "wrangler": "^3.0.0"
+  }
+}

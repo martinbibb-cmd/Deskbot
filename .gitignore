@@ -5,6 +5,10 @@
 node_modules/
 package-lock.json
 worker/.wrangler/
+.wrangler/
+
+# Build output
+dist/
 
 # Python
 __pycache__/
