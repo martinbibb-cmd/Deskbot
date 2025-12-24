@@ -48,6 +48,16 @@ const errorOverlay = document.getElementById('errorOverlay');
 const errorMessage = document.getElementById('errorMessage');
 const dismissErrorBtn = document.getElementById('dismissErrorBtn');
 const responseAudio = document.getElementById('responseAudio');
+const textInput = document.getElementById('textInput');
+const sendButton = document.getElementById('sendButton');
+const cameraSection = document.getElementById('cameraSection');
+const cameraVideo = document.getElementById('cameraVideo');
+const cameraToggle = document.getElementById('cameraToggle');
+const botMouth = document.getElementById('botMouth');
+
+// Camera state
+let cameraStream = null;
+let isCameraActive = false;
 
 // ============================================================================
 // INITIALIZATION
@@ -123,6 +133,18 @@ function setupEventListeners() {
     // Track first user interaction for iOS autoplay
     document.addEventListener('click', () => { hasInteracted = true; }, { once: true });
     document.addEventListener('touchstart', () => { hasInteracted = true; }, { once: true });
+
+    // Text chat event listeners
+    sendButton.addEventListener('click', handleTextSend);
+    textInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            handleTextSend();
+        }
+    });
+
+    // Camera toggle event listener
+    cameraToggle.addEventListener('click', toggleCamera);
 }
 
 // ============================================================================
@@ -197,10 +219,11 @@ async function startRecording() {
     
     isRecording = true;
     recordingStartTime = Date.now();
-    
+
     // Update UI
     talkButton.classList.add('recording');
     recordingIndicator.classList.add('active');
+    animateBotTalking(true);
 }
 
 /**
@@ -283,7 +306,8 @@ function stopRecording() {
     // Update UI
     talkButton.classList.remove('recording');
     recordingIndicator.classList.remove('active');
-    
+    animateBotTalking(false);
+
     // Show processing status
     const duration = ((Date.now() - recordingStartTime) / 1000).toFixed(1);
     showStatus(`Processing ${duration}s of audio...`);
@@ -511,6 +535,143 @@ function showError(message) {
  */
 function hideError() {
     errorOverlay.style.display = 'none';
+}
+
+// ============================================================================
+// CAMERA FUNCTIONS
+// ============================================================================
+
+/**
+ * Toggle camera on/off
+ */
+async function toggleCamera() {
+    if (isCameraActive) {
+        // Turn off camera
+        if (cameraStream) {
+            cameraStream.getTracks().forEach(track => track.stop());
+            cameraStream = null;
+        }
+        cameraVideo.srcObject = null;
+        cameraSection.style.display = 'none';
+        isCameraActive = false;
+        cameraToggle.textContent = '📷 Enable Camera';
+    } else {
+        // Turn on camera
+        try {
+            cameraStream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: 'user' },
+                audio: false
+            });
+            cameraVideo.srcObject = cameraStream;
+            cameraSection.style.display = 'block';
+            isCameraActive = true;
+            cameraToggle.textContent = '📷 Disable Camera';
+        } catch (error) {
+            console.error('Camera access error:', error);
+            showError('Could not access camera: ' + error.message);
+        }
+    }
+}
+
+// ============================================================================
+// TEXT CHAT FUNCTIONS
+// ============================================================================
+
+/**
+ * Handle text message send
+ */
+async function handleTextSend() {
+    const text = textInput.value.trim();
+
+    if (!text) {
+        return;
+    }
+
+    // Clear input
+    textInput.value = '';
+    sendButton.disabled = true;
+
+    // Add user message
+    addMessage('user', text);
+
+    // Animate bot thinking
+    animateBotTalking(true);
+    showStatus('Thinking...');
+
+    try {
+        // Send text message to backend
+        const response = await sendTextMessage(text);
+
+        // Add assistant response
+        if (response.replyText) {
+            addMessage('assistant', response.replyText);
+        }
+
+        // Play audio response if available
+        if (response.replyAudioUrl) {
+            await playAudioResponse(response.replyAudioUrl);
+        }
+
+        hideStatus();
+
+    } catch (error) {
+        console.error('Failed to send message:', error);
+        showError('Failed to send your message: ' + error.message);
+    } finally {
+        animateBotTalking(false);
+        sendButton.disabled = false;
+    }
+}
+
+/**
+ * Send text message to the backend API
+ */
+async function sendTextMessage(text) {
+    const sessionId = getOrCreateSessionId();
+
+    console.log('Sending text message to:', API_ENDPOINT);
+
+    try {
+        const response = await fetch(API_ENDPOINT, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                text: text,
+                sessionId: sessionId
+            })
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Server error: ${response.status} - ${errorText}`);
+        }
+
+        const data = await response.json();
+        console.log('Received response:', data);
+
+        return data;
+
+    } catch (error) {
+        console.error('Send error:', error);
+        throw error;
+    }
+}
+
+// ============================================================================
+// BOT FACE ANIMATION
+// ============================================================================
+
+/**
+ * Animate bot face when talking/thinking
+ */
+function animateBotTalking(isTalking) {
+    if (isTalking) {
+        botMouth.classList.add('talking');
+    } else {
+        botMouth.classList.remove('talking');
+    }
 }
 
 // ============================================================================

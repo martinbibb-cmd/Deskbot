@@ -18,6 +18,27 @@
         <header class="app-header">
             <h1>🤖 Deskbot</h1>
             <p class="subtitle">Your Digital Companion</p>
+
+            <!-- Simple animated face -->
+            <div class="bot-face" id="botFace">
+                <div class="face-container">
+                    <div class="eyes">
+                        <div class="eye left-eye">
+                            <div class="pupil"></div>
+                        </div>
+                        <div class="eye right-eye">
+                            <div class="pupil"></div>
+                        </div>
+                    </div>
+                    <div class="mouth" id="botMouth"></div>
+                </div>
+            </div>
+
+            <!-- Camera video display (hidden by default) -->
+            <div class="camera-section" id="cameraSection" style="display: none;">
+                <video id="cameraVideo" autoplay playsinline muted></video>
+                <button class="camera-toggle" id="cameraToggle">📷 Toggle Camera</button>
+            </div>
         </header>
 
         <!-- Chat transcript area -->
@@ -41,10 +62,24 @@
         <!-- Status messages -->
         <div class="status-message" id="statusMessage"></div>
 
+        <!-- Text chat input -->
+        <div class="text-input-container" id="textInputContainer">
+            <input
+                type="text"
+                id="textInput"
+                class="text-input"
+                placeholder="Type a message..."
+                aria-label="Type a message"
+            />
+            <button class="send-button" id="sendButton" aria-label="Send message">
+                <span class="send-icon">➤</span>
+            </button>
+        </div>
+
         <!-- Hold to Talk button -->
         <div class="button-container">
-            <button 
-                class="talk-button" 
+            <button
+                class="talk-button"
                 id="talkButton"
                 aria-label="Hold to talk"
             >
