@@ -23,9 +23,14 @@ class TextToSpeech:
             if voices:
                 # Try to find a female voice (typically more friendly sounding)
                 for voice in voices:
-                    if 'female' in voice.name.lower() or 'zira' in voice.name.lower():
-                        self.engine.setProperty('voice', voice.id)
-                        break
+                    try:
+                        voice_name = voice.name.lower() if hasattr(voice, 'name') else ''
+                        if 'female' in voice_name or 'zira' in voice_name:
+                            self.engine.setProperty('voice', voice.id)
+                            break
+                    except Exception:
+                        # If voice selection fails, continue with default
+                        continue
             
             print("Text-to-speech initialized successfully")
             

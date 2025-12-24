@@ -72,10 +72,10 @@ Be warm, engaging, and occasionally playful in your responses."""
                 "content": assistant_message
             })
             
-            # Limit conversation history length
-            if len(self.conversation_history) > 20:
+            # Limit conversation history length (keep system message + last 18 messages = 19 total)
+            if len(self.conversation_history) > 19:
                 # Keep system message and recent messages
-                self.conversation_history = [self.conversation_history[0]] + self.conversation_history[-19:]
+                self.conversation_history = [self.conversation_history[0]] + self.conversation_history[-18:]
             
             return assistant_message
             

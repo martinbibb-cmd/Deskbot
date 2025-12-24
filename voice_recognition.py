@@ -77,4 +77,12 @@ class VoiceRecognition:
         """
         if not text:
             return False
-        return self.wake_word in text.lower()
+        
+        # Split both text and wake word into words for better matching
+        text_lower = text.lower()
+        wake_words = self.wake_word.split()
+        text_words = text_lower.split()
+        
+        # Check if all wake words appear in order
+        wake_phrase = ' '.join(wake_words)
+        return wake_phrase in text_lower
