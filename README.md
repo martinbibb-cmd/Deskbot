@@ -9,13 +9,14 @@ A Python-based desktop companion app inspired by the LOOI robot. Deskbot runs on
 - 🤖 **AI Personality**: Integration with OpenAI API for natural conversations
 - 🔊 **Text-to-Speech**: Speaks responses using pyttsx3
 - 👁️ **Face Tracking**: Uses OpenCV to track your face and make eye contact
+- ☁️ **Gemini Chatbot Worker**: NEW! Cloudflare Worker with Gemini AI, multimodal support, and streaming responses (see `worker/` directory)
 
 ## Requirements
 
 - Python 3.8 or higher
 - Webcam (for face tracking)
 - Microphone (for voice recognition)
-- OpenAI API key
+- OpenAI API key (or Gemini API key for the worker)
 
 ## Installation
 
@@ -148,6 +149,16 @@ If text-to-speech isn't working:
 - On Linux, install: `sudo apt-get install espeak`
 - On macOS, TTS should work out of the box
 - On Windows, TTS should work out of the box
+
+## Gemini Chatbot Worker
+
+NEW! A Cloudflare Worker implementation with Google Gemini AI is available in the `worker/` directory. This provides:
+- Robotic Pet personality
+- Multimodal support (text + images)
+- Streaming responses
+- Robust error handling
+
+See [`worker/README.md`](worker/README.md) and [`worker/INTEGRATION.md`](worker/INTEGRATION.md) for setup and integration instructions.
 
 ## License
 
