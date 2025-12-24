@@ -264,12 +264,20 @@ function handleCORS() {
 
 /**
  * Handle audio turn request for PWA
- * Accepts multipart/form-data with audio file and sessionId
+ * Accepts multipart/form-data with audio file and sessionId OR JSON with text and sessionId
  * Returns transcript, reply text, and reply audio URL
  */
 async function handleAudioTurn(request, env, ctx) {
   try {
-    // Parse multipart form data
+    // Check content type to determine if this is text or audio
+    const contentType = request.headers.get('content-type') || '';
+
+    // Handle text message
+    if (contentType.includes('application/json')) {
+      return await handleTextMessage(request, env, ctx);
+    }
+
+    // Handle audio message (multipart/form-data)
     const formData = await request.formData();
     const audioFile = formData.get('audio');
     const sessionId = formData.get('sessionId');
@@ -277,9 +285,9 @@ async function handleAudioTurn(request, env, ctx) {
     if (!audioFile) {
       return new Response(
         JSON.stringify({ error: 'Audio file required' }),
-        { 
+        {
           status: 400,
-          headers: { 
+          headers: {
             'Content-Type': 'application/json',
             'Access-Control-Allow-Origin': '*'
           }
@@ -409,6 +417,125 @@ async function handleAudioTurn(request, env, ctx) {
 }
 
 /**
+ * Handle text message request
+ * Accepts JSON with text and sessionId
+ * Returns reply text (no audio URL as we use browser TTS)
+ */
+async function handleTextMessage(request, env, ctx) {
+  try {
+    // Parse JSON body
+    const body = await request.json();
+    const { text, sessionId } = body;
+
+    if (!text) {
+      return new Response(
+        JSON.stringify({ error: 'Text message required' }),
+        {
+          status: 400,
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*'
+          }
+        }
+      );
+    }
+
+    // Check for API key
+    const apiKey = env.GEMINI_API_KEY;
+    if (!apiKey) {
+      return new Response(
+        JSON.stringify({ error: 'API key not configured' }),
+        {
+          status: 500,
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*'
+          }
+        }
+      );
+    }
+
+    // Use Gemini API for text response
+    const model = "gemini-1.5-flash";
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+
+    const payload = {
+      contents: [{
+        parts: [{
+          text: text
+        }]
+      }],
+      systemInstruction: {
+        parts: [{ text: SYSTEM_INSTRUCTION }]
+      },
+      generationConfig: {
+        temperature: 0.7,
+        maxOutputTokens: 150,
+      }
+    };
+
+    // Call Gemini API
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Gemini API error: ${response.status} - ${errorText}`);
+    }
+
+    const data = await response.json();
+
+    // Extract response text
+    let replyText = '';
+
+    if (data.candidates && data.candidates[0] && data.candidates[0].content) {
+      const parts = data.candidates[0].content.parts;
+      if (parts && parts[0] && parts[0].text) {
+        replyText = parts[0].text;
+      }
+    }
+
+    // Return response without audio URL (browser will use TTS)
+    return new Response(
+      JSON.stringify({
+        replyText: replyText,
+        replyAudioUrl: null
+      }),
+      {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type'
+        }
+      }
+    );
+
+  } catch (error) {
+    console.error('Error processing text message:', error);
+    return new Response(
+      JSON.stringify({
+        error: 'Failed to process text message',
+        details: error.message
+      }),
+      {
+        status: 500,
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*'
+        }
+      }
+    );
+  }
+}
+
+/**
  * Convert ArrayBuffer to Base64
  * More efficient approach using Uint8Array for large files
  */
@@ -416,12 +543,12 @@ function arrayBufferToBase64(buffer) {
   const bytes = new Uint8Array(buffer);
   const chunkSize = 0x8000; // 32KB chunks
   const chunks = [];
-  
+
   // Process in chunks to avoid string length limits
   for (let i = 0; i < bytes.length; i += chunkSize) {
     const chunk = bytes.subarray(i, Math.min(i + chunkSize, bytes.length));
     chunks.push(String.fromCharCode.apply(null, chunk));
   }
-  
+
   return btoa(chunks.join(''));
 }

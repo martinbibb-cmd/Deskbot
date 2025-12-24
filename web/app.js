@@ -339,13 +339,16 @@ async function handleRecordingComplete(audioBlob) {
         // Add assistant response
         if (response.replyText) {
             addMessage('assistant', response.replyText);
+
+            // Play audio response if available, otherwise use TTS
+            if (response.replyAudioUrl) {
+                await playAudioResponse(response.replyAudioUrl);
+            } else {
+                // Use text-to-speech for the response
+                speakText(response.replyText);
+            }
         }
-        
-        // Play audio response if available
-        if (response.replyAudioUrl) {
-            await playAudioResponse(response.replyAudioUrl);
-        }
-        
+
         hideStatus();
         
     } catch (error) {
@@ -397,7 +400,7 @@ async function uploadAudio(audioBlob) {
 }
 
 // ============================================================================
-// AUDIO PLAYBACK
+// AUDIO PLAYBACK & TEXT-TO-SPEECH
 // ============================================================================
 
 /**
@@ -405,25 +408,66 @@ async function uploadAudio(audioBlob) {
  */
 async function playAudioResponse(audioUrl) {
     console.log('Playing audio response:', audioUrl);
-    
+
     try {
         // For iOS, audio playback must be triggered by user interaction
         // Since we're in the context of a user interaction (button release), this should work
         responseAudio.src = audioUrl;
-        
+
         // Attempt to play
         const playPromise = responseAudio.play();
-        
+
         if (playPromise !== undefined) {
             await playPromise;
             console.log('Audio playback started');
         }
-        
+
     } catch (error) {
         console.error('Audio playback failed:', error);
         // Don't show error to user, just log it
         // Audio playback failure shouldn't break the app
     }
+}
+
+/**
+ * Speak text using Web Speech API (TTS)
+ */
+function speakText(text) {
+    // Check if Web Speech API is supported
+    if (!('speechSynthesis' in window)) {
+        console.warn('Text-to-speech not supported in this browser');
+        return;
+    }
+
+    // Cancel any ongoing speech
+    window.speechSynthesis.cancel();
+
+    // Create utterance
+    const utterance = new SpeechSynthesisUtterance(text);
+
+    // Configure voice settings
+    utterance.rate = 1.0;  // Speed (0.1 to 10)
+    utterance.pitch = 1.0; // Pitch (0 to 2)
+    utterance.volume = 1.0; // Volume (0 to 1)
+
+    // Animate mouth while speaking
+    utterance.onstart = () => {
+        animateBotTalking(true);
+        console.log('TTS started');
+    };
+
+    utterance.onend = () => {
+        animateBotTalking(false);
+        console.log('TTS ended');
+    };
+
+    utterance.onerror = (event) => {
+        animateBotTalking(false);
+        console.error('TTS error:', event);
+    };
+
+    // Speak the text
+    window.speechSynthesis.speak(utterance);
 }
 
 // ============================================================================
@@ -605,11 +649,14 @@ async function handleTextSend() {
         // Add assistant response
         if (response.replyText) {
             addMessage('assistant', response.replyText);
-        }
 
-        // Play audio response if available
-        if (response.replyAudioUrl) {
-            await playAudioResponse(response.replyAudioUrl);
+            // Play audio response if available, otherwise use TTS
+            if (response.replyAudioUrl) {
+                await playAudioResponse(response.replyAudioUrl);
+            } else {
+                // Use text-to-speech for the response
+                speakText(response.replyText);
+            }
         }
 
         hideStatus();
