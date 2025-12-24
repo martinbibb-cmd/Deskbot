@@ -14,6 +14,8 @@
 // ============================================================================
 
 // API endpoint - modify this to point to your deployed worker
+// Development: '/api/deskbot/turn' (uses dev-server.js mock)
+// Production: 'https://your-worker.workers.dev/api/deskbot/turn'
 const API_ENDPOINT = '/api/deskbot/turn';
 
 // Session ID stored in localStorage for conversation continuity

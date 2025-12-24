@@ -20,6 +20,7 @@ const STATIC_ASSETS = [
 ];
 
 // API endpoints that should NEVER be cached
+// NOTE: Update this array when adding new API endpoints to the worker
 const API_ENDPOINTS = [
   '/api/deskbot/turn'
 ];

@@ -352,18 +352,21 @@ async function handleAudioTurn(request, env, ctx) {
 
     const data = await response.json();
     
-    // Extract response text
+    // Extract response text and transcript
     let replyText = '';
+    let transcript = 'Audio received'; // Default placeholder
+    
     if (data.candidates && data.candidates[0] && data.candidates[0].content) {
       const parts = data.candidates[0].content.parts;
       if (parts && parts[0] && parts[0].text) {
-        replyText = parts[0].text;
+        const fullResponse = parts[0].text;
+        replyText = fullResponse;
+        
+        // Gemini processes audio but doesn't always return explicit transcript
+        // The response is the assistant's reply, so we use a placeholder for transcript
+        transcript = 'Voice message received';
       }
     }
-
-    // For transcript, we'll extract it from the response or use placeholder
-    // (Gemini processes audio but doesn't always return explicit transcript)
-    const transcript = "Audio received";
 
     // Note: For text-to-speech, you would need to integrate a TTS service
     // For now, we return null for replyAudioUrl
@@ -407,12 +410,18 @@ async function handleAudioTurn(request, env, ctx) {
 
 /**
  * Convert ArrayBuffer to Base64
+ * More efficient approach using Uint8Array for large files
  */
 function arrayBufferToBase64(buffer) {
   const bytes = new Uint8Array(buffer);
-  let binary = '';
-  for (let i = 0; i < bytes.byteLength; i++) {
-    binary += String.fromCharCode(bytes[i]);
+  const chunkSize = 0x8000; // 32KB chunks
+  const chunks = [];
+  
+  // Process in chunks to avoid string length limits
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    const chunk = bytes.subarray(i, Math.min(i + chunkSize, bytes.length));
+    chunks.push(String.fromCharCode.apply(null, chunk));
   }
-  return btoa(binary);
+  
+  return btoa(chunks.join(''));
 }

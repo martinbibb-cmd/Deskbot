@@ -2,6 +2,8 @@
 
 A Python-based desktop companion app inspired by the LOOI robot. Deskbot runs on your computer and features an animated face that tracks your movements, listens to your voice, and has conversations powered by AI.
 
+**NEW!** 📱 **Progressive Web App (PWA)**: A mobile-friendly web version with push-to-talk voice interaction, perfect for iOS Safari! See [`public/README.md`](public/README.md) for details.
+
 ## Features
 
 - 🎨 **Animated GUI**: Modern interface with animated eyes using CustomTkinter
@@ -9,7 +11,8 @@ A Python-based desktop companion app inspired by the LOOI robot. Deskbot runs on
 - 🤖 **AI Personality**: Integration with OpenAI API for natural conversations
 - 🔊 **Text-to-Speech**: Speaks responses using pyttsx3
 - 👁️ **Face Tracking**: Uses OpenCV to track your face and make eye contact
-- ☁️ **Gemini Chatbot Worker**: NEW! Cloudflare Worker with Gemini AI, multimodal support, and streaming responses (see `worker/` directory)
+- ☁️ **Gemini Chatbot Worker**: Cloudflare Worker with Gemini AI, multimodal support, and streaming responses (see `worker/` directory)
+- 📱 **PWA Voice Interface**: Mobile web app with push-to-talk recording and iOS Safari support (see `public/` directory)
 
 ## Requirements
 
@@ -176,13 +179,34 @@ If text-to-speech isn't working:
 
 ## Gemini Chatbot Worker
 
-NEW! A Cloudflare Worker implementation with Google Gemini AI is available in the `worker/` directory. This provides:
+A Cloudflare Worker implementation with Google Gemini AI is available in the `worker/` directory. This provides:
 - Robotic Pet personality
-- Multimodal support (text + images)
+- Multimodal support (text + images + audio)
 - Streaming responses
 - Robust error handling
 
 See [`worker/README.md`](worker/README.md) and [`worker/INTEGRATION.md`](worker/INTEGRATION.md) for setup and integration instructions.
+
+## Progressive Web App (PWA)
+
+NEW! A mobile-friendly PWA is available in the `public/` directory. This provides:
+- 🎤 Push-to-talk voice recording
+- 💬 Bubble-style chat interface
+- 📱 iOS Safari support with Home Screen installation
+- 🔒 Offline-capable with service worker
+- ⚡ Smooth animations and visual feedback
+
+### Quick Start PWA
+
+```bash
+# Start development server
+node dev-server.js
+
+# Open http://localhost:3000 in your browser
+# For iOS: use your local network IP (e.g., http://192.168.1.100:3000)
+```
+
+See [`public/README.md`](public/README.md) for full PWA documentation, deployment instructions, and troubleshooting.
 
 ## License
 
