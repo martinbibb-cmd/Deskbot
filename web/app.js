@@ -48,6 +48,16 @@ const errorOverlay = document.getElementById('errorOverlay');
 const errorMessage = document.getElementById('errorMessage');
 const dismissErrorBtn = document.getElementById('dismissErrorBtn');
 const responseAudio = document.getElementById('responseAudio');
+const textInput = document.getElementById('textInput');
+const sendButton = document.getElementById('sendButton');
+const cameraSection = document.getElementById('cameraSection');
+const cameraVideo = document.getElementById('cameraVideo');
+const cameraToggle = document.getElementById('cameraToggle');
+const botMouth = document.getElementById('botMouth');
+
+// Camera state
+let cameraStream = null;
+let isCameraActive = false;
 
 // ============================================================================
 // INITIALIZATION
@@ -123,6 +133,18 @@ function setupEventListeners() {
     // Track first user interaction for iOS autoplay
     document.addEventListener('click', () => { hasInteracted = true; }, { once: true });
     document.addEventListener('touchstart', () => { hasInteracted = true; }, { once: true });
+
+    // Text chat event listeners
+    sendButton.addEventListener('click', handleTextSend);
+    textInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            handleTextSend();
+        }
+    });
+
+    // Camera toggle event listener
+    cameraToggle.addEventListener('click', toggleCamera);
 }
 
 // ============================================================================
@@ -197,10 +219,11 @@ async function startRecording() {
     
     isRecording = true;
     recordingStartTime = Date.now();
-    
+
     // Update UI
     talkButton.classList.add('recording');
     recordingIndicator.classList.add('active');
+    animateBotTalking(true);
 }
 
 /**
@@ -283,7 +306,8 @@ function stopRecording() {
     // Update UI
     talkButton.classList.remove('recording');
     recordingIndicator.classList.remove('active');
-    
+    animateBotTalking(false);
+
     // Show processing status
     const duration = ((Date.now() - recordingStartTime) / 1000).toFixed(1);
     showStatus(`Processing ${duration}s of audio...`);
@@ -315,13 +339,16 @@ async function handleRecordingComplete(audioBlob) {
         // Add assistant response
         if (response.replyText) {
             addMessage('assistant', response.replyText);
+
+            // Play audio response if available, otherwise use TTS
+            if (response.replyAudioUrl) {
+                await playAudioResponse(response.replyAudioUrl);
+            } else {
+                // Use text-to-speech for the response
+                speakText(response.replyText);
+            }
         }
-        
-        // Play audio response if available
-        if (response.replyAudioUrl) {
-            await playAudioResponse(response.replyAudioUrl);
-        }
-        
+
         hideStatus();
         
     } catch (error) {
@@ -373,7 +400,7 @@ async function uploadAudio(audioBlob) {
 }
 
 // ============================================================================
-// AUDIO PLAYBACK
+// AUDIO PLAYBACK & TEXT-TO-SPEECH
 // ============================================================================
 
 /**
@@ -381,25 +408,66 @@ async function uploadAudio(audioBlob) {
  */
 async function playAudioResponse(audioUrl) {
     console.log('Playing audio response:', audioUrl);
-    
+
     try {
         // For iOS, audio playback must be triggered by user interaction
         // Since we're in the context of a user interaction (button release), this should work
         responseAudio.src = audioUrl;
-        
+
         // Attempt to play
         const playPromise = responseAudio.play();
-        
+
         if (playPromise !== undefined) {
             await playPromise;
             console.log('Audio playback started');
         }
-        
+
     } catch (error) {
         console.error('Audio playback failed:', error);
         // Don't show error to user, just log it
         // Audio playback failure shouldn't break the app
     }
+}
+
+/**
+ * Speak text using Web Speech API (TTS)
+ */
+function speakText(text) {
+    // Check if Web Speech API is supported
+    if (!('speechSynthesis' in window)) {
+        console.warn('Text-to-speech not supported in this browser');
+        return;
+    }
+
+    // Cancel any ongoing speech
+    window.speechSynthesis.cancel();
+
+    // Create utterance
+    const utterance = new SpeechSynthesisUtterance(text);
+
+    // Configure voice settings
+    utterance.rate = 1.0;  // Speed (0.1 to 10)
+    utterance.pitch = 1.0; // Pitch (0 to 2)
+    utterance.volume = 1.0; // Volume (0 to 1)
+
+    // Animate mouth while speaking
+    utterance.onstart = () => {
+        animateBotTalking(true);
+        console.log('TTS started');
+    };
+
+    utterance.onend = () => {
+        animateBotTalking(false);
+        console.log('TTS ended');
+    };
+
+    utterance.onerror = (event) => {
+        animateBotTalking(false);
+        console.error('TTS error:', event);
+    };
+
+    // Speak the text
+    window.speechSynthesis.speak(utterance);
 }
 
 // ============================================================================
@@ -511,6 +579,146 @@ function showError(message) {
  */
 function hideError() {
     errorOverlay.style.display = 'none';
+}
+
+// ============================================================================
+// CAMERA FUNCTIONS
+// ============================================================================
+
+/**
+ * Toggle camera on/off
+ */
+async function toggleCamera() {
+    if (isCameraActive) {
+        // Turn off camera
+        if (cameraStream) {
+            cameraStream.getTracks().forEach(track => track.stop());
+            cameraStream = null;
+        }
+        cameraVideo.srcObject = null;
+        cameraSection.style.display = 'none';
+        isCameraActive = false;
+        cameraToggle.textContent = '📷 Enable Camera';
+    } else {
+        // Turn on camera
+        try {
+            cameraStream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: 'user' },
+                audio: false
+            });
+            cameraVideo.srcObject = cameraStream;
+            cameraSection.style.display = 'block';
+            isCameraActive = true;
+            cameraToggle.textContent = '📷 Disable Camera';
+        } catch (error) {
+            console.error('Camera access error:', error);
+            showError('Could not access camera: ' + error.message);
+        }
+    }
+}
+
+// ============================================================================
+// TEXT CHAT FUNCTIONS
+// ============================================================================
+
+/**
+ * Handle text message send
+ */
+async function handleTextSend() {
+    const text = textInput.value.trim();
+
+    if (!text) {
+        return;
+    }
+
+    // Clear input
+    textInput.value = '';
+    sendButton.disabled = true;
+
+    // Add user message
+    addMessage('user', text);
+
+    // Animate bot thinking
+    animateBotTalking(true);
+    showStatus('Thinking...');
+
+    try {
+        // Send text message to backend
+        const response = await sendTextMessage(text);
+
+        // Add assistant response
+        if (response.replyText) {
+            addMessage('assistant', response.replyText);
+
+            // Play audio response if available, otherwise use TTS
+            if (response.replyAudioUrl) {
+                await playAudioResponse(response.replyAudioUrl);
+            } else {
+                // Use text-to-speech for the response
+                speakText(response.replyText);
+            }
+        }
+
+        hideStatus();
+
+    } catch (error) {
+        console.error('Failed to send message:', error);
+        showError('Failed to send your message: ' + error.message);
+    } finally {
+        animateBotTalking(false);
+        sendButton.disabled = false;
+    }
+}
+
+/**
+ * Send text message to the backend API
+ */
+async function sendTextMessage(text) {
+    const sessionId = getOrCreateSessionId();
+
+    console.log('Sending text message to:', API_ENDPOINT);
+
+    try {
+        const response = await fetch(API_ENDPOINT, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                text: text,
+                sessionId: sessionId
+            })
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Server error: ${response.status} - ${errorText}`);
+        }
+
+        const data = await response.json();
+        console.log('Received response:', data);
+
+        return data;
+
+    } catch (error) {
+        console.error('Send error:', error);
+        throw error;
+    }
+}
+
+// ============================================================================
+// BOT FACE ANIMATION
+// ============================================================================
+
+/**
+ * Animate bot face when talking/thinking
+ */
+function animateBotTalking(isTalking) {
+    if (isTalking) {
+        botMouth.classList.add('talking');
+    } else {
+        botMouth.classList.remove('talking');
+    }
 }
 
 // ============================================================================
