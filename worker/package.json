@@ -1,0 +1,22 @@
+{
+  "name": "gemini-chatbot-worker",
+  "version": "1.0.0",
+  "description": "Cloudflare Worker for Gemini Assistant Chatbot with Robotic Pet personality",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "keywords": [
+    "cloudflare",
+    "worker",
+    "gemini",
+    "chatbot",
+    "ai"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "wrangler": "^3.0.0"
+  }
+}

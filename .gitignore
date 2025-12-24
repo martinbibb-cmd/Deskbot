@@ -1,6 +1,11 @@
 # Environment variables
 .env
 
+# Node.js (for worker)
+node_modules/
+package-lock.json
+worker/.wrangler/
+
 # Python
 __pycache__/
 *.py[cod]
