@@ -1,0 +1,9 @@
+name = "gemini-chatbot-worker"
+main = "src/index.js"
+compatibility_date = "2024-12-01"
+
+[vars]
+# Environment variables can be set here or via wrangler CLI
+
+# Uncomment and set your Gemini API key
+# GEMINI_API_KEY = "your-api-key-here"
