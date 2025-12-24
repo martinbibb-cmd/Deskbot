@@ -33,6 +33,12 @@ export default {
       return new Response('Method not allowed', { status: 405 });
     }
 
+    // Check if this is an audio turn request
+    const url = new URL(request.url);
+    if (url.pathname === '/api/deskbot/turn') {
+      return handleAudioTurn(request, env, ctx);
+    }
+
     try {
       // Parse request body
       const body = await request.json();
@@ -254,4 +260,168 @@ function handleCORS() {
       'Access-Control-Max-Age': '86400',
     },
   });
+}
+
+/**
+ * Handle audio turn request for PWA
+ * Accepts multipart/form-data with audio file and sessionId
+ * Returns transcript, reply text, and reply audio URL
+ */
+async function handleAudioTurn(request, env, ctx) {
+  try {
+    // Parse multipart form data
+    const formData = await request.formData();
+    const audioFile = formData.get('audio');
+    const sessionId = formData.get('sessionId');
+
+    if (!audioFile) {
+      return new Response(
+        JSON.stringify({ error: 'Audio file required' }),
+        { 
+          status: 400,
+          headers: { 
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*'
+          }
+        }
+      );
+    }
+
+    // Check for API key
+    const apiKey = env.GEMINI_API_KEY;
+    if (!apiKey) {
+      return new Response(
+        JSON.stringify({ error: 'API key not configured' }),
+        { 
+          status: 500,
+          headers: { 
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*'
+          }
+        }
+      );
+    }
+
+    // Convert audio to base64
+    const audioBuffer = await audioFile.arrayBuffer();
+    const audioBase64 = arrayBufferToBase64(audioBuffer);
+    
+    // Determine mime type from audio file
+    const mimeType = audioFile.type || 'audio/webm';
+
+    // Use Gemini's multimodal capability with audio
+    const model = "gemini-1.5-flash";
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+
+    const payload = {
+      contents: [{
+        parts: [
+          {
+            inline_data: {
+              mime_type: mimeType,
+              data: audioBase64
+            }
+          },
+          {
+            text: "Please transcribe this audio and provide a friendly response."
+          }
+        ]
+      }],
+      systemInstruction: {
+        parts: [{ text: SYSTEM_INSTRUCTION }]
+      },
+      generationConfig: {
+        temperature: 0.7,
+        maxOutputTokens: 150,
+      }
+    };
+
+    // Call Gemini API
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Gemini API error: ${response.status} - ${errorText}`);
+    }
+
+    const data = await response.json();
+    
+    // Extract response text and transcript
+    let replyText = '';
+    let transcript = 'Audio received'; // Default placeholder
+    
+    if (data.candidates && data.candidates[0] && data.candidates[0].content) {
+      const parts = data.candidates[0].content.parts;
+      if (parts && parts[0] && parts[0].text) {
+        const fullResponse = parts[0].text;
+        replyText = fullResponse;
+        
+        // Gemini processes audio but doesn't always return explicit transcript
+        // The response is the assistant's reply, so we use a placeholder for transcript
+        transcript = 'Voice message received';
+      }
+    }
+
+    // Note: For text-to-speech, you would need to integrate a TTS service
+    // For now, we return null for replyAudioUrl
+    // You could integrate Google Cloud TTS or another service here
+    const replyAudioUrl = null;
+
+    return new Response(
+      JSON.stringify({
+        transcript: transcript,
+        replyText: replyText,
+        replyAudioUrl: replyAudioUrl
+      }),
+      { 
+        status: 200,
+        headers: { 
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type'
+        }
+      }
+    );
+
+  } catch (error) {
+    console.error('Error processing audio turn:', error);
+    return new Response(
+      JSON.stringify({ 
+        error: 'Failed to process audio',
+        details: error.message
+      }),
+      { 
+        status: 500,
+        headers: { 
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*'
+        }
+      }
+    );
+  }
+}
+
+/**
+ * Convert ArrayBuffer to Base64
+ * More efficient approach using Uint8Array for large files
+ */
+function arrayBufferToBase64(buffer) {
+  const bytes = new Uint8Array(buffer);
+  const chunkSize = 0x8000; // 32KB chunks
+  const chunks = [];
+  
+  // Process in chunks to avoid string length limits
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    const chunk = bytes.subarray(i, Math.min(i + chunkSize, bytes.length));
+    chunks.push(String.fromCharCode.apply(null, chunk));
+  }
+  
+  return btoa(chunks.join(''));
 }

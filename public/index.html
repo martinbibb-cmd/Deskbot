@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#1a1a2e">
+    <title>Deskbot - Voice Assistant</title>
+    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="stylesheet" href="/style.css">
+    <link rel="icon" type="image/png" href="/icon-192.png">
+    <link rel="apple-touch-icon" href="/icon-192.png">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <h1>🤖 Deskbot</h1>
+            <p class="subtitle">Your Digital Companion</p>
+        </header>
+
+        <!-- Chat transcript area -->
+        <div class="chat-container" id="chatContainer">
+            <div class="chat-messages" id="chatMessages">
+                <!-- Welcome message -->
+                <div class="message assistant">
+                    <div class="message-bubble">
+                        <p>Hello! I'm Deskbot, your digital companion. Hold the button below to talk to me!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recording indicator -->
+        <div class="recording-indicator" id="recordingIndicator">
+            <div class="recording-pulse"></div>
+            <span>Recording...</span>
+        </div>
+
+        <!-- Status messages -->
+        <div class="status-message" id="statusMessage"></div>
+
+        <!-- Hold to Talk button -->
+        <div class="button-container">
+            <button 
+                class="talk-button" 
+                id="talkButton"
+                aria-label="Hold to talk"
+            >
+                <span class="button-icon">🎤</span>
+                <span class="button-text">Hold to Talk</span>
+            </button>
+        </div>
+
+        <!-- Permission prompt overlay -->
+        <div class="permission-overlay" id="permissionOverlay" style="display: none;">
+            <div class="permission-content">
+                <h2>🎤 Microphone Access</h2>
+                <p>Deskbot needs access to your microphone to hear you.</p>
+                <button class="permission-button" id="requestPermissionBtn">
+                    Enable Microphone
+                </button>
+            </div>
+        </div>
+
+        <!-- Error overlay -->
+        <div class="error-overlay" id="errorOverlay" style="display: none;">
+            <div class="error-content">
+                <h2>⚠️ Error</h2>
+                <p id="errorMessage"></p>
+                <button class="error-button" id="dismissErrorBtn">
+                    Dismiss
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Audio element for playing responses (hidden) -->
+    <audio id="responseAudio" preload="none"></audio>
+
+    <!-- Scripts -->
+    <script src="/app.js"></script>
+    <script>
+        // Register service worker for PWA functionality
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js')
+                    .then(registration => {
+                        console.log('Service Worker registered:', registration);
+                    })
+                    .catch(error => {
+                        console.log('Service Worker registration failed:', error);
+                    });
+            });
+        }
+    </script>
+</body>
+</html>
