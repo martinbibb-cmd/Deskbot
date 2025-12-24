@@ -303,16 +303,39 @@ async function handleAudioTurn(request, env, ctx) {
     const apiKey = env.GEMINI_API_KEY;
     if (!apiKey) {
       return new Response(
-        JSON.stringify({ error: 'API key not configured' }),
-        { 
+        JSON.stringify({
+          error: 'API key not configured',
+          help: 'Set GEMINI_API_KEY using: wrangler secret put GEMINI_API_KEY'
+        }),
+        {
           status: 500,
-          headers: { 
+          headers: {
             'Content-Type': 'application/json',
             'Access-Control-Allow-Origin': '*'
           }
         }
       );
     }
+
+    // Validate API key format (basic check)
+    if (typeof apiKey !== 'string' || apiKey.trim().length === 0) {
+      console.error('Invalid API key format: API key is empty or not a string');
+      return new Response(
+        JSON.stringify({
+          error: 'Invalid API key format',
+          help: 'Ensure GEMINI_API_KEY is a valid string. Update using: wrangler secret put GEMINI_API_KEY'
+        }),
+        {
+          status: 500,
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*'
+          }
+        }
+      );
+    }
+
+    console.log('API key found, length:', apiKey.length);
 
     // Convert audio to base64
     const audioBuffer = await audioFile.arrayBuffer();
@@ -359,11 +382,34 @@ async function handleAudioTurn(request, env, ctx) {
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`Gemini API error: ${response.status} - ${errorText}`);
+      console.error('Gemini API error response:', errorText);
+
+      // Parse error to provide helpful message
+      let errorMessage = `Gemini API error: ${response.status}`;
+      let helpMessage = null;
+
+      try {
+        const errorData = JSON.parse(errorText);
+        if (errorData.error && errorData.error.message) {
+          errorMessage = errorData.error.message;
+
+          // Check for API key related errors
+          if (errorMessage.includes('API key not valid') || errorMessage.includes('API_KEY_INVALID')) {
+            helpMessage = 'Your GEMINI_API_KEY appears to be invalid. Please verify your API key at https://aistudio.google.com/app/apikey and update it using: wrangler secret put GEMINI_API_KEY';
+          }
+        }
+      } catch (parseError) {
+        // If parsing fails, use the raw error text
+        errorMessage += ` - ${errorText}`;
+      }
+
+      const error = new Error(errorMessage);
+      error.helpMessage = helpMessage;
+      throw error;
     }
 
     const data = await response.json();
-    
+
     // Extract response text and transcript
     let replyText = '';
     let transcript = 'Audio received'; // Default placeholder
@@ -404,14 +450,22 @@ async function handleAudioTurn(request, env, ctx) {
 
   } catch (error) {
     console.error('Error processing audio turn:', error);
+
+    const errorResponse = {
+      error: 'Failed to process audio',
+      details: error.message
+    };
+
+    // Add help message if available
+    if (error.helpMessage) {
+      errorResponse.help = error.helpMessage;
+    }
+
     return new Response(
-      JSON.stringify({ 
-        error: 'Failed to process audio',
-        details: error.message
-      }),
-      { 
+      JSON.stringify(errorResponse),
+      {
         status: 500,
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'Access-Control-Allow-Origin': '*'
         }
@@ -448,7 +502,10 @@ async function handleTextMessage(request, env, ctx) {
     const apiKey = env.GEMINI_API_KEY;
     if (!apiKey) {
       return new Response(
-        JSON.stringify({ error: 'API key not configured' }),
+        JSON.stringify({
+          error: 'API key not configured',
+          help: 'Set GEMINI_API_KEY using: wrangler secret put GEMINI_API_KEY'
+        }),
         {
           status: 500,
           headers: {
@@ -458,6 +515,26 @@ async function handleTextMessage(request, env, ctx) {
         }
       );
     }
+
+    // Validate API key format (basic check)
+    if (typeof apiKey !== 'string' || apiKey.trim().length === 0) {
+      console.error('Invalid API key format: API key is empty or not a string');
+      return new Response(
+        JSON.stringify({
+          error: 'Invalid API key format',
+          help: 'Ensure GEMINI_API_KEY is a valid string. Update using: wrangler secret put GEMINI_API_KEY'
+        }),
+        {
+          status: 500,
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*'
+          }
+        }
+      );
+    }
+
+    console.log('API key found, length:', apiKey.length);
 
     // Use Gemini API for text response
     const model = "gemini-1.5-flash";
@@ -489,7 +566,30 @@ async function handleTextMessage(request, env, ctx) {
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`Gemini API error: ${response.status} - ${errorText}`);
+      console.error('Gemini API error response:', errorText);
+
+      // Parse error to provide helpful message
+      let errorMessage = `Gemini API error: ${response.status}`;
+      let helpMessage = null;
+
+      try {
+        const errorData = JSON.parse(errorText);
+        if (errorData.error && errorData.error.message) {
+          errorMessage = errorData.error.message;
+
+          // Check for API key related errors
+          if (errorMessage.includes('API key not valid') || errorMessage.includes('API_KEY_INVALID')) {
+            helpMessage = 'Your GEMINI_API_KEY appears to be invalid. Please verify your API key at https://aistudio.google.com/app/apikey and update it using: wrangler secret put GEMINI_API_KEY';
+          }
+        }
+      } catch (parseError) {
+        // If parsing fails, use the raw error text
+        errorMessage += ` - ${errorText}`;
+      }
+
+      const error = new Error(errorMessage);
+      error.helpMessage = helpMessage;
+      throw error;
     }
 
     const data = await response.json();
@@ -523,11 +623,19 @@ async function handleTextMessage(request, env, ctx) {
 
   } catch (error) {
     console.error('Error processing text message:', error);
+
+    const errorResponse = {
+      error: 'Failed to process text message',
+      details: error.message
+    };
+
+    // Add help message if available
+    if (error.helpMessage) {
+      errorResponse.help = error.helpMessage;
+    }
+
     return new Response(
-      JSON.stringify({
-        error: 'Failed to process text message',
-        details: error.message
-      }),
+      JSON.stringify(errorResponse),
       {
         status: 500,
         headers: {
