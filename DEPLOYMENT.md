@@ -2,11 +2,13 @@
 
 This guide walks you through deploying the Deskbot PWA to production.
 
+**No Python installation required!** The PWA is pure static HTML/CSS/JavaScript.
+
 ## Prerequisites
 
 - Google Gemini API key ([Get one here](https://makersuite.google.com/app/apikey))
 - Cloudflare account (free tier works)
-- Node.js v18+ installed locally
+- Node.js v18+ installed locally (for worker deployment only)
 - Git installed
 
 ## Step 1: Deploy the Cloudflare Worker
@@ -41,6 +43,8 @@ You'll receive a URL like: `https://gemini-chatbot-worker.your-subdomain.workers
 
 ## Step 2: Deploy Static Frontend
 
+The `/web/` directory contains the PWA static files. No build step required!
+
 Choose one of the following hosting options:
 
 ### Option A: Cloudflare Pages (Recommended)
@@ -58,55 +62,65 @@ Choose one of the following hosting options:
    - Click "Create a project"
    - Connect your GitHub repository
    - Configure build settings:
-     - Build command: (leave empty)
-     - Build output directory: `public`
+     - Build command: (leave empty - no build needed!)
+     - Build output directory: `web`
    - Click "Save and Deploy"
 
 3. **Get your Pages URL**: `https://your-project.pages.dev`
 
 ### Option B: Netlify
 
-1. **Install Netlify CLI** (optional):
+1. **Deploy via Netlify UI**:
+   - Go to [Netlify](https://app.netlify.com/)
+   - Click "Add new site" → "Import an existing project"
+   - Connect to GitHub and select your repository
+   - Configure:
+     - Base directory: `web`
+     - Build command: (leave empty)
+     - Publish directory: `web`
+   - Click "Deploy site"
+
+2. **Or use Netlify CLI**:
    ```bash
    npm install -g netlify-cli
-   ```
-
-2. **Deploy**:
-   ```bash
-   cd public
+   cd web
    netlify deploy --prod
-   # Follow prompts to create/select site
    ```
-
-   Or use the Netlify web interface to deploy the `public/` directory.
 
 ### Option C: Vercel
 
-1. **Install Vercel CLI** (optional):
+1. **Deploy via Vercel UI**:
+   - Go to [Vercel](https://vercel.com/)
+   - Click "Add New Project"
+   - Import your GitHub repository
+   - Configure:
+     - Root Directory: `web`
+     - Build Command: (leave empty)
+     - Output Directory: (leave empty)
+   - Click "Deploy"
+
+2. **Or use Vercel CLI**:
    ```bash
    npm install -g vercel
-   ```
-
-2. **Deploy**:
-   ```bash
+   cd web
    vercel --prod
-   # When prompted for "Which directory is your code located?"
-   # Enter: public
    ```
 
 ### Option D: GitHub Pages
 
-1. **Create a new branch**:
+1. **Create gh-pages branch with web directory**:
    ```bash
    git checkout -b gh-pages
-   git add public/*
+   # Copy web contents to root for GitHub Pages
+   cp -r web/* .
+   git add .
    git commit -m "Deploy to GitHub Pages"
    git push origin gh-pages
    ```
 
 2. **Enable GitHub Pages**:
    - Go to repository Settings → Pages
-   - Select `gh-pages` branch and `/public` folder
+   - Select `gh-pages` branch and `/` (root)
    - Save
 
 3. **Access at**: `https://username.github.io/Deskbot/`
@@ -117,7 +131,7 @@ Update the frontend to use your deployed worker URL.
 
 ### 3.1 Edit app.js
 
-In `public/app.js`, update line 17:
+In `web/app.js`, update line 19:
 
 ```javascript
 // Change from:
@@ -129,7 +143,10 @@ const API_ENDPOINT = 'https://gemini-chatbot-worker.your-subdomain.workers.dev/a
 
 ### 3.2 Redeploy
 
-After updating, redeploy the static files using your chosen method from Step 2.
+After updating, redeploy the static files:
+- **Cloudflare Pages/Netlify/Vercel**: Just push to GitHub (auto-deploys)
+- **GitHub Pages**: Commit and push to gh-pages branch
+- **Manual**: Re-upload files to your hosting
 
 ## Step 4: Test Your PWA
 
@@ -275,7 +292,7 @@ After deployment:
 ## Support
 
 For issues or questions:
-- Check [public/README.md](public/README.md) for troubleshooting
+- Check [web/README.md](web/README.md) for troubleshooting
 - Review [worker/INTEGRATION.md](worker/INTEGRATION.md)
 - Open an issue on GitHub
 

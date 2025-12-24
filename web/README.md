@@ -50,19 +50,19 @@ A Progressive Web App (PWA) implementation of Deskbot that provides voice intera
    npm run deploy
    ```
 
-4. **Host static files**: Deploy the `public/` directory to:
+4. **Host static files**: Deploy the `web/` directory to:
    - Cloudflare Pages
    - Netlify
    - Vercel
    - Any static hosting service
    - Or use Cloudflare Workers Sites
 
-5. **Update API endpoint**: In `public/app.js`, update the `API_ENDPOINT` constant to point to your deployed worker URL.
+5. **Update API endpoint**: In `web/app.js`, update the `API_ENDPOINT` constant to point to your deployed worker URL.
 
 ## File Structure
 
 ```
-public/
+web/
 ├── index.html           # Main HTML structure with chat UI
 ├── style.css           # Styles including bubble chat and animations
 ├── app.js              # Core application logic

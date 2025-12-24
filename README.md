@@ -1,203 +1,27 @@
 # Deskbot
 
-A Python-based desktop companion app inspired by the LOOI robot. Deskbot runs on your computer and features an animated face that tracks your movements, listens to your voice, and has conversations powered by AI.
+A Progressive Web App (PWA) voice assistant inspired by the LOOI robot. Deskbot works on any device with a modern browser and features push-to-talk voice interaction powered by AI.
 
-**NEW!** 📱 **Progressive Web App (PWA)**: A mobile-friendly web version with push-to-talk voice interaction, perfect for iOS Safari! See [`public/README.md`](public/README.md) for details.
+📱 **Works on iOS Safari, Android Chrome, and Desktop browsers!**
 
 ## Features
 
-- 🎨 **Animated GUI**: Modern interface with animated eyes using CustomTkinter
-- 🎤 **Voice Recognition**: Listens for wake word and voice commands
-- 🤖 **AI Personality**: Integration with OpenAI API for natural conversations
-- 🔊 **Text-to-Speech**: Speaks responses using pyttsx3
-- 👁️ **Face Tracking**: Uses OpenCV to track your face and make eye contact
-- ☁️ **Gemini Chatbot Worker**: Cloudflare Worker with Gemini AI, multimodal support, and streaming responses (see `worker/` directory)
-- 📱 **PWA Voice Interface**: Mobile web app with push-to-talk recording and iOS Safari support (see `public/` directory)
+- 🎤 **Push-to-Talk Voice Recording**: Hold button to record, release to send
+- 💬 **Bubble-style Chat Interface**: Clean, modern messaging UI
+- 🤖 **AI Personality**: Powered by Google Gemini AI with natural conversations
+- ☁️ **Cloudflare Worker Backend**: Fast, globally distributed API (see `worker/` directory)
+- 📱 **Installable PWA**: Add to home screen on iOS/Android for app-like experience
+- 🔒 **Offline-capable**: Service worker caches static assets
+- ⚡ **No Installation Required**: Just visit the URL and start talking
 
-## Requirements
+## Quick Start
 
-- Python 3.8 or higher
-- Webcam (for face tracking)
-- Microphone (for voice recognition)
-- OpenAI API key (or Gemini API key for the worker)
+**Option 1: Use the deployed version** (if available)
+- Visit your deployed URL
+- Allow microphone access
+- Hold the button and speak!
 
-## Installation
-
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/martinbibb-cmd/Deskbot.git
-   cd Deskbot
-   ```
-
-2. **Install system dependencies** (required for PyAudio):
-   
-   **On Ubuntu/Debian:**
-   ```bash
-   sudo apt-get update
-   sudo apt-get install portaudio19-dev
-   ```
-   
-   **On macOS:**
-   ```bash
-   brew install portaudio
-   ```
-   
-   **On Windows:**
-   - Download and install PyAudio from [here](https://www.lfd.uci.edu/~gohlke/pythonlibs/#pyaudio), or
-   - PyAudio should work with pip on most systems
-
-3. **Create a virtual environment** (recommended):
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
-
-4. **Install dependencies**:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-5. **Set up environment variables**:
-   ```bash
-   cp .env.example .env
-   ```
-   Edit `.env` and add your OpenAI API key:
-   ```
-   OPENAI_API_KEY=your_api_key_here
-   ```
-
-## Usage
-
-Run the application:
-```bash
-python main.py
-```
-
-### Controls
-
-- **Start Listening**: Click to enable voice recognition
-- **Quit**: Close the application
-
-### Voice Interaction
-
-1. Click "Start Listening" to enable voice recognition
-2. Speak naturally - Deskbot will hear you and respond
-3. The eyes will track your face automatically if face tracking is enabled
-
-## Configuration
-
-Edit the `.env` file to customize settings:
-
-- `OPENAI_API_KEY`: Your OpenAI API key (required for AI features)
-- `WAKE_WORD`: Wake word for activation (default: "hey deskbot")
-- `VOICE_ENABLED`: Enable/disable voice recognition (default: true)
-- `FACE_TRACKING_ENABLED`: Enable/disable face tracking (default: true)
-
-## Project Structure
-
-```
-Deskbot/
-├── main.py                 # Main application loop
-├── gui.py                  # GUI with animated eyes
-├── voice_recognition.py    # Voice recognition module
-├── openai_integration.py   # OpenAI API integration
-├── text_to_speech.py       # Text-to-speech module
-├── face_tracking.py        # Face tracking module
-├── requirements.txt        # Python dependencies
-├── .env.example           # Example environment variables
-└── README.md              # This file
-```
-
-## Modules
-
-### main.py
-Main application entry point that coordinates all modules and manages the main loop.
-
-### gui.py
-Creates the graphical interface with:
-- Animated eyes that smoothly track face position
-- Automatic blinking
-- Expression changes (normal, happy, talking)
-- Status updates and control buttons
-
-### voice_recognition.py
-Handles voice input using the speech_recognition library:
-- Microphone calibration
-- Wake word detection
-- Speech-to-text conversion
-
-### openai_integration.py
-Manages conversations with OpenAI:
-- Maintains conversation history
-- Configurable personality
-- Context-aware responses
-
-### text_to_speech.py
-Converts text responses to speech:
-- Offline text-to-speech using pyttsx3
-- Configurable voice properties
-- Cross-platform support
-
-### face_tracking.py
-Tracks user's face position:
-- OpenCV face detection
-- Normalized position output
-- Smooth tracking with fallback to center
-
-## Troubleshooting
-
-### PyAudio Installation Issues
-If you encounter errors installing PyAudio:
-- **Linux**: Make sure `portaudio19-dev` is installed: `sudo apt-get install portaudio19-dev`
-- **macOS**: Install PortAudio with Homebrew: `brew install portaudio`
-- **Windows**: Try installing from a pre-built wheel or use `pip install pipwin && pipwin install pyaudio`
-- **Build environments** (Netlify, etc.): Ensure `apt-packages.txt` includes `portaudio19-dev`
-
-### Microphone Issues
-If voice recognition isn't working:
-- Check that your microphone is connected and working
-- Adjust the `energy_threshold` in `voice_recognition.py`
-- Try running the microphone calibration again
-
-### Camera Issues
-If face tracking isn't working:
-- Check that your webcam is connected
-- Make sure no other application is using the camera
-- Set `FACE_TRACKING_ENABLED=false` in `.env` to disable face tracking
-
-### OpenAI API Issues
-If AI responses aren't working:
-- Verify your API key in `.env`
-- Check your OpenAI account has available credits
-- Check your internet connection
-
-### Audio/TTS Issues
-If text-to-speech isn't working:
-- On Linux, install: `sudo apt-get install espeak`
-- On macOS, TTS should work out of the box
-- On Windows, TTS should work out of the box
-
-## Gemini Chatbot Worker
-
-A Cloudflare Worker implementation with Google Gemini AI is available in the `worker/` directory. This provides:
-- Robotic Pet personality
-- Multimodal support (text + images + audio)
-- Streaming responses
-- Robust error handling
-
-See [`worker/README.md`](worker/README.md) and [`worker/INTEGRATION.md`](worker/INTEGRATION.md) for setup and integration instructions.
-
-## Progressive Web App (PWA)
-
-NEW! A mobile-friendly PWA is available in the `public/` directory. This provides:
-- 🎤 Push-to-talk voice recording
-- 💬 Bubble-style chat interface
-- 📱 iOS Safari support with Home Screen installation
-- 🔒 Offline-capable with service worker
-- ⚡ Smooth animations and visual feedback
-
-### Quick Start PWA
-
+**Option 2: Run locally for development**
 ```bash
 # Start development server
 node dev-server.js
@@ -206,7 +30,130 @@ node dev-server.js
 # For iOS: use your local network IP (e.g., http://192.168.1.100:3000)
 ```
 
-See [`public/README.md`](public/README.md) for full PWA documentation, deployment instructions, and troubleshooting.
+## PWA Installation
+
+### iOS Safari
+1. Visit the app URL in Safari
+2. Tap the Share button
+3. Tap "Add to Home Screen"
+4. Open from your home screen
+
+### Android Chrome
+1. Visit the app URL in Chrome
+2. Tap "Install app" when prompted
+3. Open from your app drawer
+
+## Deployment
+
+See [`DEPLOYMENT.md`](DEPLOYMENT.md) for complete deployment instructions to:
+- Cloudflare Pages (recommended)
+- Netlify
+- Vercel
+- GitHub Pages
+- Any static hosting service
+
+**No Python installation required for deployment!** Just serve the static files in `/web/` directory.
+
+
+## Project Structure
+
+```
+Deskbot/
+├── web/                    # PWA static files (deploy this directory)
+│   ├── index.html         # Main app interface
+│   ├── app.js            # Push-to-talk voice recording logic
+│   ├── style.css         # Styling
+│   ├── manifest.webmanifest  # PWA manifest
+│   ├── service-worker.js     # Offline caching
+│   └── icon-*.png            # App icons
+├── worker/                # Cloudflare Worker backend
+│   ├── src/              # Worker source code
+│   └── README.md         # Worker documentation
+└── requirements.txt      # Optional Python tooling dependencies
+
+**Desktop Python app (legacy)**:
+- main.py, gui.py, voice_recognition.py, etc. are legacy files
+- Use the PWA in `/web/` directory instead
+```
+
+## Backend: Cloudflare Worker
+
+The backend API is a Cloudflare Worker with Google Gemini AI. It provides:
+- Robotic Pet personality
+- Multimodal support (audio transcription + text responses)
+- Fast, globally distributed edge computing
+- Robust error handling
+
+See [`worker/README.md`](worker/README.md) for setup and deployment instructions.
+
+## Troubleshooting
+
+### Microphone Access
+- **Browser permissions**: Click "Allow" when prompted
+- **HTTPS required**: getUserMedia requires HTTPS (or localhost)
+- **iOS Safari**: Must be installed as PWA for best experience
+
+### Audio Not Recording
+- Check browser console for errors
+- Verify microphone is working in other apps
+- Try a different browser
+- Ensure HTTPS is being used
+
+### PWA Not Installing
+**On iOS:**
+- Must use HTTPS or localhost
+- Use Safari (not Chrome)
+- Follow: Share → Add to Home Screen
+
+**On Android:**
+- Must use HTTPS
+- Use Chrome for best support
+- Look for install prompt in address bar
+
+### API Connection Issues
+- Verify worker is deployed and accessible
+- Check `API_ENDPOINT` in `/web/app.js`
+- Check browser console for CORS errors
+- Verify Gemini API key is set in worker
+
+## Development
+
+### Local Development
+```bash
+# Start local dev server
+node dev-server.js
+
+# Server runs at http://localhost:3000
+# Includes CORS headers for local testing
+```
+
+### Deploy Worker
+```bash
+cd worker
+npm install
+wrangler secret put GEMINI_API_KEY
+npm run deploy
+```
+
+### Deploy Static Files
+Simply deploy the `/web/` directory to any static hosting service:
+- Cloudflare Pages
+- Netlify  
+- Vercel
+- GitHub Pages
+- Any CDN or static host
+
+**No build step required!** Just serve the files.
+
+## Legacy Desktop App
+
+The original Python desktop app files (main.py, gui.py, etc.) are kept for reference but are no longer the primary interface. The PWA in `/web/` is now the recommended way to use Deskbot.
+
+To run the legacy desktop app (not recommended):
+1. Install Python 3.8+
+2. Install system dependencies (portaudio, opencv, etc.)
+3. Run `pip install -r requirements.txt` (optional tooling deps only)
+4. Note: Desktop dependencies have been removed from requirements.txt
 
 ## License
 
@@ -214,4 +161,4 @@ MIT License - feel free to use and modify!
 
 ## Acknowledgments
 
-Inspired by the LOOI robot - bringing companionship to your desktop!
+Inspired by the LOOI robot - bringing companionship to your devices!
