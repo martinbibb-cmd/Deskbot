@@ -21,6 +21,16 @@ interface Env {
   GEMINI_API_KEY?: string;
 }
 
+interface GeminiResponse {
+  candidates?: Array<{
+    content?: {
+      parts?: Array<{
+        text?: string;
+      }>;
+    };
+  }>;
+}
+
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
@@ -82,7 +92,9 @@ async function handleAudioTurn(request: Request, env: Env, ctx: ExecutionContext
     // Check for API key
     const apiKey = env.GEMINI_API_KEY;
     if (!apiKey) {
-      // Return 501 Not Implemented if no API key configured
+      // Return 501 Not Implemented if no API key configured (as per requirements)
+      // This differs from the legacy worker which returned 500, but 501 is more
+      // semantically correct for "not yet implemented" functionality
       return new Response(
         JSON.stringify({ 
           error: 'API not configured. Backend implementation pending.',
@@ -146,7 +158,7 @@ async function handleAudioTurn(request: Request, env: Env, ctx: ExecutionContext
       throw new Error(`Gemini API error: ${response.status} - ${errorText}`);
     }
 
-    const data = await response.json() as any;
+    const data = await response.json() as GeminiResponse;
     
     // Extract response text and transcript
     let replyText = '';
@@ -203,16 +215,18 @@ async function handleAudioTurn(request: Request, env: Env, ctx: ExecutionContext
 
 /**
  * Convert ArrayBuffer to Base64
+ * Uses a safe chunking approach to avoid call stack limitations
  */
 function arrayBufferToBase64(buffer: ArrayBuffer): string {
   const bytes = new Uint8Array(buffer);
   const chunkSize = 0x8000; // 32KB chunks
   const chunks: string[] = [];
   
-  // Process in chunks to avoid string length limits
+  // Process in chunks to avoid string length limits and call stack overflow
   for (let i = 0; i < bytes.length; i += chunkSize) {
     const chunk = bytes.subarray(i, Math.min(i + chunkSize, bytes.length));
-    chunks.push(String.fromCharCode.apply(null, Array.from(chunk)));
+    // Use Array.from with map for safer chunk processing
+    chunks.push(Array.from(chunk, byte => String.fromCharCode(byte)).join(''));
   }
   
   return btoa(chunks.join(''));
