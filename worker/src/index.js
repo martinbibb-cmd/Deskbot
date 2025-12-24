@@ -204,7 +204,7 @@ function buildContents(messages, image) {
  */
 async function fetchGeminiWithRetry(apiKey, payload, maxRetries = 3) {
   const model = "gemini-1.5-flash"; // Fast model for streaming
-  const baseUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent`;
+  const baseUrl = `https://generativelanguage.googleapis.com/v1/models/${model}:streamGenerateContent`;
   const url = `${baseUrl}?key=${apiKey}&alt=sse`;
 
   for (let attempt = 0; attempt < maxRetries; attempt++) {
@@ -346,7 +346,7 @@ async function handleAudioTurn(request, env, ctx) {
 
     // Use Gemini's multimodal capability with audio
     const model = "gemini-1.5-flash";
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+    const url = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${apiKey}`;
 
     const payload = {
       contents: [{
@@ -538,7 +538,7 @@ async function handleTextMessage(request, env, ctx) {
 
     // Use Gemini API for text response
     const model = "gemini-1.5-flash";
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+    const url = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${apiKey}`;
 
     const payload = {
       contents: [{
