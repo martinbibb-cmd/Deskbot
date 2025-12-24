@@ -6,7 +6,8 @@
   "scripts": {
     "build": "node scripts/build.js",
     "dev": "wrangler dev",
-    "deploy": "npm run build && wrangler versions upload"
+    "deploy": "npm run build && wrangler versions upload",
+    "prepare": "npm run build"
   },
   "keywords": [
     "cloudflare",
