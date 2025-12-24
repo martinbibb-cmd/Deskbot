@@ -9,18 +9,14 @@
  */
 
 // System instruction for the Robotic Pet personality
-const SYSTEM_INSTRUCTION = {
-  role: "system",
-  parts: [{
-    text: `You are a digital companion with a Robotic Pet personality.
+// This is used in the Gemini API's systemInstruction field
+const SYSTEM_INSTRUCTION = `You are a digital companion with a Robotic Pet personality.
 Your characteristics:
 - Use short sentences.
 - Be slightly cheeky and curious.
 - Always refer to yourself as a 'digital companion.'
 - Show enthusiasm and playfulness in your responses.
-- Keep responses concise and engaging.`
-  }]
-};
+- Keep responses concise and engaging.`;
 
 /**
  * Handle incoming requests
@@ -65,12 +61,12 @@ export default {
         );
       }
 
-      // Build the conversation with system instruction
-      const fullConversation = [SYSTEM_INSTRUCTION, ...messages];
-
       // Prepare the request payload for Gemini
       const geminiPayload = {
-        contents: buildContents(fullConversation, image),
+        contents: buildContents(messages, image),
+        systemInstruction: {
+          parts: [{ text: SYSTEM_INSTRUCTION }]
+        },
         generationConfig: {
           temperature: 0.7,
           topK: 40,
@@ -172,10 +168,13 @@ function buildContents(messages, image) {
       });
     }
 
-    contents.push({
-      role: message.role === 'user' ? 'user' : 'model',
-      parts: parts
-    });
+    // Only add to contents if parts array is not empty
+    if (parts.length > 0) {
+      contents.push({
+        role: message.role === 'user' ? 'user' : 'model',
+        parts: parts
+      });
+    }
   }
 
   // Add image from top-level if provided (for single image with latest message)
