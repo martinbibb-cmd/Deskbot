@@ -31,7 +31,7 @@ A Python-based desktop companion app inspired by the LOOI robot. Deskbot runs on
    **On Ubuntu/Debian:**
    ```bash
    sudo apt-get update
-   sudo apt-get install portaudio19-dev python3-pyaudio
+   sudo apt-get install portaudio19-dev
    ```
    
    **On macOS:**
