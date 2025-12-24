@@ -270,14 +270,18 @@ function handleCORS() {
 async function handleAudioTurn(request, env, ctx) {
   try {
     // Check content type to determine if this is text or audio
-    const contentType = request.headers.get('content-type') || '';
+    const contentType = (request.headers.get('content-type') || '').toLowerCase();
 
-    // Handle text message
+    console.log('Content-Type:', contentType);
+
+    // Handle text message (JSON)
     if (contentType.includes('application/json')) {
+      console.log('Handling as text message');
       return await handleTextMessage(request, env, ctx);
     }
 
     // Handle audio message (multipart/form-data)
+    console.log('Handling as audio message');
     const formData = await request.formData();
     const audioFile = formData.get('audio');
     const sessionId = formData.get('sessionId');

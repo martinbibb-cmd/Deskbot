@@ -87,19 +87,48 @@ function handleApiRequest(req, res) {
     return;
   }
 
-  // For development, return a mock response
-  // In production, this would be handled by the Cloudflare Worker
-  const mockResponse = {
-    transcript: "Hello, this is a test message",
-    replyText: "Hi there! I'm Deskbot, your digital companion. Nice to meet you!",
-    replyAudioUrl: null // TTS not implemented yet
-  };
+  // Check content type to determine response type
+  const contentType = (req.headers['content-type'] || '').toLowerCase();
 
-  res.writeHead(200, {
-    'Content-Type': 'application/json',
-    'Access-Control-Allow-Origin': '*'
+  let body = '';
+  req.on('data', chunk => {
+    body += chunk.toString();
   });
-  res.end(JSON.stringify(mockResponse));
+
+  req.on('end', () => {
+    let mockResponse;
+
+    // Handle text messages (JSON)
+    if (contentType.includes('application/json')) {
+      try {
+        const data = JSON.parse(body);
+        console.log('Text message:', data.text);
+
+        mockResponse = {
+          replyText: "Hi there! I'm Deskbot, your digital companion. How can I help you today?",
+          replyAudioUrl: null // Browser will use TTS
+        };
+      } catch (e) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Invalid JSON' }));
+        return;
+      }
+    }
+    // Handle audio messages (multipart/form-data)
+    else {
+      mockResponse = {
+        transcript: "Voice message received",
+        replyText: "Hey! I heard you! I'm your digital companion, ready to chat!",
+        replyAudioUrl: null // Browser will use TTS
+      };
+    }
+
+    res.writeHead(200, {
+      'Content-Type': 'application/json',
+      'Access-Control-Allow-Origin': '*'
+    });
+    res.end(JSON.stringify(mockResponse));
+  });
 }
 
 server.listen(PORT, () => {
